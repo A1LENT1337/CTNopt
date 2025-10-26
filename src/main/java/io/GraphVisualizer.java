@@ -3,125 +3,130 @@ package io;
 import graph.Graph;
 import graph.Edge;
 import model.MSTResult;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartUtils;
-import org.jfree.chart.JFreeChart;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
+import algorithms.PrimAlgorithm;
+import algorithms.KruskalAlgorithm;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
 
 public class GraphVisualizer {
 
-    public static void createPerformanceChart(List<MSTResult> results, String outputPath) throws IOException {
-        XYSeries primTimeSeries = new XYSeries("Prim Time");
-        XYSeries kruskalTimeSeries = new XYSeries("Kruskal Time");
-        XYSeries primOpsSeries = new XYSeries("Prim Operations");
-        XYSeries kruskalOpsSeries = new XYSeries("Kruskal Operations");
+    private static final int IMAGE_SIZE = 800;
+    private static final int MARGIN = 50;
+    private static final int NODE_RADIUS = 20;
+    private static final Color BACKGROUND_COLOR = Color.WHITE;
+    private static final Color NODE_COLOR = Color.BLUE;
+    private static final Color EDGE_COLOR = Color.GRAY;
+    private static final Color MST_EDGE_COLOR = Color.RED;
+    private static final Color TEXT_COLOR = Color.BLACK;
 
-        // Группируем по размеру графа
-        Map<Integer, List<MSTResult>> bySize = new TreeMap<>();
-        for (MSTResult result : results) {
-            bySize.computeIfAbsent(result.getVertexCount(), k -> new ArrayList<>()).add(result);
-        }
+    public static void visualizeGraphWithMST(Graph originalGraph, MSTResult mstResult,
+                                             String algorithmName, String outputPath) {
+        BufferedImage image = new BufferedImage(IMAGE_SIZE, IMAGE_SIZE, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = image.createGraphics();
 
-        for (Map.Entry<Integer, List<MSTResult>> entry : bySize.entrySet()) {
-            int vertexCount = entry.getKey();
-            List<MSTResult> algoResults = entry.getValue();
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setColor(BACKGROUND_COLOR);
+        g2d.fillRect(0, 0, IMAGE_SIZE, IMAGE_SIZE);
 
-            double primTime = 0, kruskalTime = 0;
-            double primOps = 0, kruskalOps = 0;
-            int primCount = 0, kruskalCount = 0;
+        List<Integer> vertices = originalGraph.getVertices();
+        int vertexCount = vertices.size();
+        Point[] positions = calculateCircularPositions(vertexCount);
 
-            for (MSTResult result : algoResults) {
-                if ("Prim".equals(result.getAlgorithmName())) {
-                    primTime += result.getExecutionTime();
-                    primOps += result.getOperationCount();
-                    primCount++;
-                } else {
-                    kruskalTime += result.getExecutionTime();
-                    kruskalOps += result.getOperationCount();
-                    kruskalCount++;
-                }
-            }
-
-            if (primCount > 0) {
-                primTimeSeries.add(vertexCount, primTime / primCount);
-                primOpsSeries.add(vertexCount, primOps / primCount);
-            }
-            if (kruskalCount > 0) {
-                kruskalTimeSeries.add(vertexCount, kruskalTime / kruskalCount);
-                kruskalOpsSeries.add(vertexCount, kruskalOps / kruskalCount);
+        g2d.setColor(EDGE_COLOR);
+        g2d.setStroke(new BasicStroke(1));
+        for (Edge edge : originalGraph.getEdges()) {
+            int fromIndex = vertices.indexOf(edge.getFrom());
+            int toIndex = vertices.indexOf(edge.getTo());
+            if (fromIndex != -1 && toIndex != -1) {
+                Point from = positions[fromIndex];
+                Point to = positions[toIndex];
+                g2d.drawLine(from.x, from.y, to.x, to.y);
             }
         }
 
-        // Создаем график времени
-        XYSeriesCollection timeDataset = new XYSeriesCollection();
-        timeDataset.addSeries(primTimeSeries);
-        timeDataset.addSeries(kruskalTimeSeries);
+        g2d.setColor(MST_EDGE_COLOR);
+        g2d.setStroke(new BasicStroke(3));
+        for (Edge edge : mstResult.getMstEdges()) {
+            int fromIndex = vertices.indexOf(edge.getFrom());
+            int toIndex = vertices.indexOf(edge.getTo());
+            if (fromIndex != -1 && toIndex != -1) {
+                Point from = positions[fromIndex];
+                Point to = positions[toIndex];
+                g2d.drawLine(from.x, from.y, to.x, to.y);
+            }
+        }
 
-        JFreeChart timeChart = ChartFactory.createXYLineChart(
-                "MST Algorithms Execution Time",
-                "Graph Size (vertices)",
-                "Time (ms)",
-                timeDataset
-        );
+        g2d.setColor(NODE_COLOR);
+        for (int i = 0; i < vertexCount; i++) {
+            Point pos = positions[i];
+            g2d.fillOval(pos.x - NODE_RADIUS, pos.y - NODE_RADIUS,
+                    NODE_RADIUS * 2, NODE_RADIUS * 2);
 
-        XYSeriesCollection opsDataset = new XYSeriesCollection();
-        opsDataset.addSeries(primOpsSeries);
-        opsDataset.addSeries(kruskalOpsSeries);
+            g2d.setColor(Color.WHITE);
+            g2d.setFont(new Font("Arial", Font.BOLD, 12));
+            String label = String.valueOf(vertices.get(i));
+            FontMetrics fm = g2d.getFontMetrics();
+            int textWidth = fm.stringWidth(label);
+            int textHeight = fm.getHeight();
+            g2d.drawString(label, pos.x - textWidth/2, pos.y + textHeight/4);
+            g2d.setColor(NODE_COLOR);
+        }
 
-        JFreeChart opsChart = ChartFactory.createXYLineChart(
-                "MST Algorithms Operation Count",
-                "Graph Size (vertices)",
-                "Operations",
-                opsDataset
-        );
+        g2d.setColor(TEXT_COLOR);
+        g2d.setFont(new Font("Arial", Font.BOLD, 16));
+        String title = algorithmName + " MST - Cost: " + mstResult.getTotalCost();
+        g2d.drawString(title, 20, 30);
 
-        ChartUtils.saveChartAsPNG(new File(outputPath + "_time.png"), timeChart, 800, 600);
-        ChartUtils.saveChartAsPNG(new File(outputPath + "_operations.png"), opsChart, 800, 600);
+        g2d.dispose();
+
+        try {
+            ImageIO.write(image, "PNG", new File(outputPath));
+            System.out.println("✅ Graph visualization saved: " + outputPath);
+        } catch (IOException e) {
+            System.err.println("❌ Error saving visualization: " + e.getMessage());
+        }
     }
 
-    public static void createCostComparisonChart(List<MSTResult> results, String outputPath) throws IOException {
-        XYSeries primSeries = new XYSeries("Prim");
-        XYSeries kruskalSeries = new XYSeries("Kruskal");
+    private static Point[] calculateCircularPositions(int vertexCount) {
+        Point[] positions = new Point[vertexCount];
+        int centerX = IMAGE_SIZE / 2;
+        int centerY = IMAGE_SIZE / 2;
+        int radius = Math.min(IMAGE_SIZE, IMAGE_SIZE) / 2 - MARGIN - NODE_RADIUS;
 
-        // Группируем по ID графа
-        Map<String, MSTResult[]> byGraph = new TreeMap<>();
-        for (MSTResult result : results) {
-            String graphKey = result.getVertexCount() + "_" + (results.indexOf(result) / 2);
-            byGraph.computeIfAbsent(graphKey, k -> new MSTResult[2]);
-
-            if ("Prim".equals(result.getAlgorithmName())) {
-                byGraph.get(graphKey)[0] = result;
-            } else {
-                byGraph.get(graphKey)[1] = result;
-            }
+        for (int i = 0; i < vertexCount; i++) {
+            double angle = 2 * Math.PI * i / vertexCount;
+            int x = centerX + (int)(radius * Math.cos(angle));
+            int y = centerY + (int)(radius * Math.sin(angle));
+            positions[i] = new Point(x, y);
         }
+        return positions;
+    }
 
-        int index = 1;
-        for (Map.Entry<String, MSTResult[]> entry : byGraph.entrySet()) {
-            MSTResult[] algoResults = entry.getValue();
-            if (algoResults[0] != null && algoResults[1] != null) {
-                primSeries.add(index, algoResults[0].getTotalCost());
-                kruskalSeries.add(index, algoResults[1].getTotalCost());
-                index++;
-            }
+    public static void generateAllVisualizations(List<Graph> graphs, String outputDir) {
+        PrimAlgorithm prim = new PrimAlgorithm();
+        KruskalAlgorithm kruskal = new KruskalAlgorithm();
+
+        new File(outputDir).mkdirs();
+
+        for (int i = 0; i < Math.min(5, graphs.size()); i++) {
+            Graph graph = graphs.get(i);
+
+            // Prim visualization
+            MSTResult primResult = prim.findMST(graph);
+            String primOutput = outputDir + "/prim_graph_" + (i + 1) + ".png";
+            visualizeGraphWithMST(graph, primResult, "Prim", primOutput);
+
+            // Kruskal visualization
+            MSTResult kruskalResult = kruskal.findMST(graph);
+            String kruskalOutput = outputDir + "/kruskal_graph_" + (i + 1) + ".png";
+            visualizeGraphWithMST(graph, kruskalResult, "Kruskal", kruskalOutput);
+
+            System.out.println("📊 Generated visualizations for graph " + (i + 1));
         }
-
-        XYSeriesCollection dataset = new XYSeriesCollection();
-        dataset.addSeries(primSeries);
-        dataset.addSeries(kruskalSeries);
-
-        JFreeChart chart = ChartFactory.createXYLineChart(
-                "MST Cost Comparison (Prim vs Kruskal)",
-                "Graph Instance",
-                "Total Cost",
-                dataset
-        );
-
-        ChartUtils.saveChartAsPNG(new File(outputPath + "_cost.png"), chart, 800, 600);
     }
 }

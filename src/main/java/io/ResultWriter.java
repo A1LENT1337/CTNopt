@@ -26,11 +26,11 @@ public class ResultWriter {
 
             int id = 1;
             for (MSTResult result : results) {
-                writer.printf("%d,%s,%d,%d,%d,%d\n",
+                writer.printf("%d,%s,%d,%.2f,%d,%d\n", // ИЗМЕНИЛ %d на %.2f для времени
                         id++,
                         result.getAlgorithmName(),
                         result.getVertexCount(),
-                        result.getExecutionTime(),
+                        result.getExecutionTime(), // теперь double
                         result.getOperationCount(),
                         result.getTotalCost()
                 );

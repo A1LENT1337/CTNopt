@@ -47,46 +47,48 @@ Multiple datasets were generated to test both the correctness and the scalabilit
 
 Each algorithm was run on every graph 3 times, and the execution time and operation count were averaged. The **Total Cost** was identical for Prim's and Kruskal's across all graph instances, confirming the correctness of both implementations.
 
-| Dataset                   | Graphs | Algorithm | Avg Time (ms) | Avg Operations | Total Cost |
-|:--------------------------| :---: | :--- | ---: | ---: | ---: |
-| `small_graphs.json`       | 5 | **Prim** | 0.28 | 325 | **331** |
-| `small_graphs.json`       | 5 | **Kruskal** | 0.19 | 93 | **331** |
-| `medium_graphs.json`      | 10 | **Prim** | 0.69 | 5,012 | **1,353** |
-| `medium_graphs.json`      | 10 | **Kruskal** | 0.18 | 548 | **1,353** |
-| `large_graphs.json`        | 10 | **Prim** | 7.12 | 301,241 | **10,238** |
-| `large_graphs.json`       | 10 | **Kruskal** | 2.12 | 5,764 | **10,238** |
-| `extra_large_graphs.json` | 3 | **Prim** | 23.75 | 1,499,968 | **26,144** |
-| `extra_large_graphs.json` | 3 | **Kruskal**| 3.20 | 15,420 | **26,144** |
+| Dataset | Graphs | Algorithm | Avg Time (ms) | Avg Operations | Total Cost |
+| :--- | :---: | :--- | ---: | ---: | ---: |
+| `small_graphs.json` | 5 | **Prim** | 0.05 | 135 | **117** |
+| `small_graphs.json` | 5 | **Kruskal** | 0.02 | 51 | **117** |
+| `medium_graphs.json` | 10 | **Prim** | 0.38 | 7,133 | **2,050** |
+| `medium_graphs.json` | 10 | **Kruskal** | 0.11 | 671 | **2,050** |
+| `large_graphs.json` | 10 | **Prim** | 1.92 | 196,020 | **6,228** |
+| `large_graphs.json` | 10 | **Kruskal** | 0.44 | 4,321 | **6,228** |
+| `extra_large_graphs.json`| 3 | **Prim** | 2.76 | 815,733 | **13,583** |
+| `extra_large_graphs.json`| 3 | **Kruskal**| 1.01 | 10,776 | **13,583** |
+
+---
 
 ### 4.2. Comparative Analysis
 
-The empirical results from the benchmark are decisive, providing a clear insight into the practical performance differences, which are largely determined by the graph representation used.
+The empirical results from the benchmark are decisive and provide a clear insight into the practical performance of these specific implementations.
 
 #### Theoretical Efficiency
 
-* **Kruskal's Algorithm:** Complexity is $O(E \log E)$ or $O(E \log V)$. Performance is dominated by the initial **sorting of all edges**. The subsequent cycle-checking using the optimized $Union-Find$ structure is nearly constant time ($O(\alpha(V))$).
-* **Prim's Algorithm:** Theoretical optimal complexity is $O(E \log V)$ when using an optimized data structure (e.g., Priority Queue with adjacency list).
+* **Kruskal's Algorithm:** The theoretical complexity is $O(E \log E)$ or $O(E \log V)$. The performance is dominated by the time it takes to **sort all edges** by weight. The $Union-Find$ operations (to detect cycles) are, with optimizations, nearly constant time ($O(\alpha(V))$).
+* **Prim's Algorithm:** The theoretical complexity is typically $O(E \log V)$ when implemented with a priority queue and adjacency list.
 
-#### Practical Efficiency (Analysis of Updated Results)
+#### Practical Efficiency (Analysis of Results)
 
-The results show that **Kruskal's algorithm significantly outperforms Prim's algorithm** in this project's environment as the graph size grows.
+The results confirm that **Kruskal's algorithm dramatically outperforms Prim's algorithm** in this implementation, especially as the graph size increases.
 
-* **Time Advantage:** For the `extra_large` dataset, **Kruskal is about 7.4 times faster** (3.20 ms) than Prim (23.75 ms).
-* **Operational Discrepancy:** The difference in operation count is the most telling metric. For the largest graphs, Kruskal performs $\approx 15.4$ thousand operations, while Prim performs $\approx 1.5$ million operations. This **100-fold difference** confirms the severe performance penalty incurred by Prim's implementation.
+* **Time Advantage:** On the `extra_large` dataset, **Kruskal is approximately 2.7 times faster** (1.01 ms) than Prim (2.76 ms).
+* **Operational Discrepancy:** The difference in operations is vast. For the largest dataset, Kruskal performs **10,776** operations, while Prim performs **815,733**—a **~75-fold difference** in the core algorithmic work required.
 
-**The Implementation Bottleneck:**
+**Why this discrepancy?**
 
-The `PrimAlgorithm.java` implementation, which uses an edge list (`graph.getEdges()`) instead of a traditional adjacency list, is forced to **iterate over the entire set of edges ($O(E)$) on every iteration** of the main loop (which runs $V$ times). This degrades its performance to $O(V \cdot E)$, which is substantially slower than Kruskal's $O(E \log E)$ on all but the smallest inputs.
+As detailed in the previous analysis, the severe performance gap stems from the specific implementation of Prim's algorithm:
+
+1.  **Kruskal's Efficiency:** It performs the expected $O(E \log E)$ due to efficient edge sorting and the use of the optimized **$Union-Find$** structure.
+2.  **Prim's Bottleneck:** The Prim's implementation uses an **edge list** (`graph.getEdges()`) rather than an optimized adjacency list. Consequently, it is forced to **iterate over the entire set of edges ($O(E)$) on every step** of adding a new vertex (which runs $V$ times). This results in a practical time complexity of **$O(V \cdot E)$**, which is significantly slower and less scalable than Kruskal's $O(E \log E)$.
 
 ---
 
 ## 5. Conclusions
 
 1.  **Correctness:** Both algorithms are **correct**, consistently finding the identical minimum cost for the MST.
-2.  **Performance:** For the given data structure (a simple list of all edges), **Kruskal's algorithm is the unequivocally superior choice**. Its time complexity scales better ($O(E \log E)$) than the $O(V \cdot E)$ implementation of Prim's.
-3.  **Recommendation:**
-  * For implementation simplicity and speed with an **edge list representation**, **Kruskal's** is recommended.
-  * To make **Prim's** competitive on dense graphs, the core `Graph` structure must be refactored to use an **Adjacency List**.
+2.  **Performance:** For the given data structure (a simple list of all edges), **Kruskal's algorithm is the unequivocally superior choice**. Its better asymptotic complexity for this structure ($O(E \log E)$) ensures far better scalability than the $O(V \cdot E)$ complexity observed in the Prim implementation.
 
 ---
 
@@ -94,19 +96,17 @@ The `PrimAlgorithm.java` implementation, which uses an edge list (`graph.getEdge
 
 ### Testing
 Automated **JUnit** tests (`MSTAlgorithmTest.java`) confirm:
-* **Cost Equivalence:** The total cost of the MST is identical between Prim's and Kruskal's.
-* **Edge Count:** The resulting MST contains $V-1$ edges for connected graphs, validating the spanning property.
-* **MSF Handling:** Disconnected graphs result in a Minimum Spanning Forest (MSF), a functionally correct outcome for this problem type.
+* **Cost Equivalence:** The total cost of the MST is identical for both algorithms.
+* **Edge Count:** The resulting MST contains $V-1$ edges for connected graphs.
 
 ### Bonus Section (10%)
 This project successfully fulfills the bonus requirement for implementing a custom graph data structure:
 1.  **Custom Classes:** `graph/Graph.java` and `graph/Edge.java` are the backbone of the data model.
-2.  **Integration:** Both `PrimAlgorithm` and `KruskalAlgorithm` receive the custom `Graph` object as input, showcasing a robust and object-oriented architecture.
+2.  **Integration:** Both algorithms receive the custom `Graph` object as input, demonstrating a robust and object-oriented architecture.
 
 ---
 
 ## 7. References
-* Cormen, T. H., Leiserson, C. E., Rivest, R. L., & Stein, C. (2009). *Introduction to Algorithms* (3rd ed.). MIT Press.
 * GeeksforGeeks. *Prim’s vs Kruskal’s Algorithm – Comparison and Implementation.*
 [https://www.geeksforgeeks.org/](https://www.geeksforgeeks.org/)
 * Programiz. *Kruskal’s Algorithm.*

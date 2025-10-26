@@ -2,6 +2,7 @@ import algorithms.*;
 import graph.Graph;
 import io.JsonGraphReader;
 import io.ResultWriter;
+import io.GraphVisualizer;
 import model.MSTResult;
 
 import java.io.*;
@@ -15,6 +16,7 @@ public class Main {
 
             MSTAlgorithm prim = new PrimAlgorithm();
             MSTAlgorithm kruskal = new KruskalAlgorithm();
+
             List<MSTResult> allResults = new ArrayList<>();
 
             String[] inputFiles = {
@@ -32,16 +34,22 @@ public class Main {
 
                 try {
                     List<Graph> graphs = reader.readGraphsFromFile(inputFile);
-                    Map<String, List<Long>> timeMap = new HashMap<>();
+                    Map<String, List<Double>> timeMap = new HashMap<>();
                     Map<String, List<Long>> opMap = new HashMap<>();
                     Map<String, Integer> costMap = new HashMap<>();
+
+                    // Генерируем визуализации только для small graphs
+                    if (inputFile.equals("input/small_graphs.json")) {
+                        System.out.println("🎨 Generating graph visualizations...");
+                        GraphVisualizer.generateAllVisualizations(graphs, "output/visualizations");
+                    }
 
                     for (Graph graph : graphs) {
                         for (int i = 0; i < 3; i++) {
                             MSTResult primResult = prim.findMST(graph);
                             MSTResult kruskalResult = kruskal.findMST(graph);
 
-                            if (i == 0) { // Только первый раз добавляем в общие результаты
+                            if (i == 0) {
                                 allResults.add(primResult);
                                 allResults.add(kruskalResult);
                             }
@@ -58,7 +66,7 @@ public class Main {
                     }
 
                     for (String algo : Arrays.asList("Prim", "Kruskal")) {
-                        double avgTime = timeMap.get(algo).stream().mapToLong(Long::longValue).average().orElse(0);
+                        double avgTime = timeMap.get(algo).stream().mapToDouble(Double::doubleValue).average().orElse(0);
                         double avgOps = opMap.get(algo).stream().mapToLong(Long::longValue).average().orElse(0);
                         int cost = costMap.get(algo);
 
@@ -78,13 +86,15 @@ public class Main {
             }
 
             new File("output").mkdirs();
+            new File("output/visualizations").mkdirs(); // Создаем папку для визуализаций
+
             writer.writeJsonResults(allResults, "output/results.json");
             writer.writeCsvResults(allResults, "output/results.csv");
-
             saveBenchmarkResults(benchmarkResults, "output/benchmark.csv");
 
             System.out.println("✅ All graphs processed successfully!");
             System.out.println("📊 Results saved to output/ folder");
+            System.out.println("🎨 Visualizations saved to output/visualizations/ folder");
 
         } catch (Exception e) {
             System.err.println("❌ Error: " + e.getMessage());

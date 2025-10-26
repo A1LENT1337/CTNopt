@@ -1,9 +1,9 @@
 Dataset,Graph Count,Algorithm,Avg Time (ms),Avg Operations,Total Cost
-small_graphs.json,5,Prim,0,28,325,331
-small_graphs.json,5,Kruskal,0,19,93,331
-medium_graphs.json,10,Prim,0,69,5012,1353
-medium_graphs.json,10,Kruskal,0,18,548,1353
-large_graphs.json,10,Prim,7,12,301241,10238
-large_graphs.json,10,Kruskal,2,12,5764,10238
-extra_large_graphs.json,3,Prim,23,75,1499968,26144
-extra_large_graphs.json,3,Kruskal,3,20,15420,26144
+small_graphs.json,5,Prim,0,05,135,117
+small_graphs.json,5,Kruskal,0,02,51,117
+medium_graphs.json,10,Prim,0,38,7133,2050
+medium_graphs.json,10,Kruskal,0,11,671,2050
+large_graphs.json,10,Prim,1,92,196020,6228
+large_graphs.json,10,Kruskal,0,44,4321,6228
+extra_large_graphs.json,3,Prim,2,76,815733,13583
+extra_large_graphs.json,3,Kruskal,1,01,10776,13583

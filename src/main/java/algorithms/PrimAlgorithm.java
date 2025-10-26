@@ -19,11 +19,10 @@ public class PrimAlgorithm implements MSTAlgorithm {
 
         if (graph.getVertices().isEmpty()) {
             long endTime = System.nanoTime();
-            long executionTime = (endTime - startTime) / 1_000_000;
+            double executionTime = (endTime - startTime) / 1_000_000.0; // ИЗМЕНИЛ на double
             return new MSTResult(getAlgorithmName(), 0, 0, mstEdges, 0, executionTime, operationCount);
         }
 
-        // Обрабатываем все компоненты связности
         for (Integer startVertex : graph.getVertices()) {
             if (visited.contains(startVertex)) continue;
 
@@ -31,7 +30,6 @@ public class PrimAlgorithm implements MSTAlgorithm {
             visited.add(startVertex);
             operationCount++;
 
-            // Добавляем все рёбра из стартовой вершины
             for (Edge edge : graph.getEdges()) {
                 operationCount++;
                 if (edge.getFrom() == startVertex || edge.getTo() == startVertex) {
@@ -55,7 +53,6 @@ public class PrimAlgorithm implements MSTAlgorithm {
                     mstEdges.add(edge);
                     totalCost += edge.getWeight();
 
-                    // Добавляем рёбра из новой вершины
                     for (Edge e : graph.getEdges()) {
                         operationCount++;
                         if ((e.getFrom() == nextVertex && !visited.contains(e.getTo())) ||
@@ -68,7 +65,7 @@ public class PrimAlgorithm implements MSTAlgorithm {
         }
 
         long endTime = System.nanoTime();
-        long executionTime = (endTime - startTime) / 1_000_000;
+        double executionTime = (endTime - startTime) / 1_000_000.0; // ИЗМЕНИЛ на double
 
         return new MSTResult(
                 getAlgorithmName(),

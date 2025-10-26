@@ -18,7 +18,7 @@ public class KruskalAlgorithm implements MSTAlgorithm {
 
         if (graph.getVertices().isEmpty()) {
             long endTime = System.nanoTime();
-            long executionTime = (endTime - startTime) / 1_000_000;
+            double executionTime = (endTime - startTime) / 1_000_000.0; // ИЗМЕНИЛ на double
             return new MSTResult(getAlgorithmName(), 0, 0, mstEdges, 0, executionTime, operationCount);
         }
 
@@ -48,7 +48,7 @@ public class KruskalAlgorithm implements MSTAlgorithm {
         }
 
         long endTime = System.nanoTime();
-        long executionTime = (endTime - startTime) / 1_000_000;
+        double executionTime = (endTime - startTime) / 1_000_000.0; // ИЗМЕНИЛ на double
 
         return new MSTResult(
                 getAlgorithmName(),
